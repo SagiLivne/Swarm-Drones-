@@ -26,10 +26,16 @@ public:
 
     void trackMarkerThread();
 
+    std::pair<int, int> twoClosest(std::vector<cv::Vec3d> localRvecs, std::vector<cv::Vec3d> localTvecs);
+
+    double forwardDistance(std::vector<cv::Vec2d> localRvec, std::vector<cv::Vec2d> localTvec);
+
     double upDown = 0.0;
     double forward = 0.0;
     double rightLeft = 0.0;
     std::pair<int, bool> leftOverAngle{0, false};
+
+   
 
 private:
     bool runCamera;
