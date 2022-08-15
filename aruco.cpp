@@ -58,6 +58,8 @@ void aruco::trackMarkerThread() {
             cv::aruco::detectMarkers(*frame, dictionary, corners, ids);
         } else {
             std::cout << "no frames" << std::endl;
+            lostLeader();
+            ID = -1;
             sleep(1);
             continue;
         }
@@ -74,16 +76,21 @@ void aruco::trackMarkerThread() {
         if (canContinue) {
             std::vector<cv::Vec3d> localRvecs, localTvecs;
             cv::aruco::estimatePoseSingleMarkers(corners, currentMarkerSize, cameraParams[0], cameraParams[1],
-                                                 localRvecs,
-                                                 localTvecs);
+                localRvecs,
+                localTvecs);
 
+            if (init) {
+                initialaize(twoClosest(localRvecs, localTvecs);
+                init = false;
+            }else{
             rightID = twoClosest(localRvecs, localTvecs).first;
 
             if (!localRvecs.empty()) {
                 cv::Mat rmat = cv::Mat::eye(3, 3, CV_64FC1);
                 try {
                     cv::Rodrigues(localRvecs[rightId], rmat);
-                } catch (...) {
+                }
+                catch (...) {
                     std::cout << "coudlnot convert vector to mat" << std::endl;
                     continue;
                 }
@@ -91,10 +98,13 @@ void aruco::trackMarkerThread() {
                 rightLeft = t.at<double>(0);
                 upDown = t.at<double>(1);
                 forward = t.at<double>(2);
+                ID = rightID;
                 leftOverAngle = getLeftOverAngleFromRotationVector(localRvecs[rightId]);
                 usleep(amountOfUSleepForTrackMarker);
-            } else {
+            }
+            else {
                 std::cout << "couldnt get R vector" << std::endl;
+            }
             }
         } else {
             std::cout << "didnt detect marker" << std::endl;
@@ -103,13 +113,49 @@ void aruco::trackMarkerThread() {
     }
 }
 
+//initialize drones
+void initialaize(std::pair<int, int> twoClosest, std::vector<cv::Vec3d> localTvecs;) {
+    cv::Mat rmat = cv::Mat::eye(3, 3, CV_64FC1);
+
+    try {
+        cv::Rodrigues(localRvecs[rightId], rmat);
+    }
+    catch (...) {
+        std::cout << "coudlnot convert vector to mat" << std::endl;
+        continue;
+    }
+
+    auto t = cv::Mat(-rmat.t() * cv::Mat(localTvecs[twoClosest.first]));
+    double rightLeftInit = t.at<double>(0);
+
+    auto t = cv::Mat(-rmat.t() * cv::Mat(localTvecs[twoClosest.second]));
+    double rightLeftInit2 = t.at<double>(0);
+     
+    if (rightleftInit < rightLeftInit2) {
+        rightInForm = false;
+    }
+    else {
+        rightInForm = true;
+    }
+
+}
+
 //Returns the two closest markers detected.
 std::pair<int, int> twoClosest(std::vector<cv::Vec3d> localRvecs, std::vector<cv::Vec3d> localTvecs) {
-    double firstMinForward = forwardDistance(localRvecs[0], localTvecs[0]);
-    double secondMinForward = firstMinForward;
+    double firstMinForward;
+    double secondMinForward;
+    int firstMinID = 0, secondMinID = 0;
     if (!localRvecs.empty()) {
-        int firstMinID = 0, secondMinID = 0;
-        for (int iter = 1; iter < localRvecs.size; iter++) {
+        if (localRvecs.size == 1) {
+            return std::make_pair<int, int>(0,0);
+        }
+        firstMinForward = forwardDistance(localRvecs[0], localTvecs[0]);
+        secondMinForward = forwardDistance(localRvecs[1],localTvecs[1]);
+        if (firstMinForward > secondMinForward) {
+            firstMinForward= forwardDistance(localRvecs[1], localTvecs[1]);
+            secondMinforward = forwardDistance(localRvecs[0], localTvecs[0]);
+        }
+        for (int iter = 2; iter < localRvecs.size; iter++) {
             double iterForward = forwardDistance(localRvecs[iter], localTvecs[iter]);
             if (firstMinForward > iterForward) {
                 secondMinForward = firstMinForward; 
@@ -127,7 +173,7 @@ std::pair<int, int> twoClosest(std::vector<cv::Vec3d> localRvecs, std::vector<cv
     } else {
         std::cout << "couldnt get R vector" << std::endl;
     }
-    return std::make_pair<int, int> (firstMinID, secondMinForward);
+    return std::make_pair<int, int> (firstMinID, secondMinID);
 }
 
 //Try to generalize to return t var instead.

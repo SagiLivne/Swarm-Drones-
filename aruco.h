@@ -33,8 +33,11 @@ public:
     double upDown = 0.0;
     double forward = 0.0;
     double rightLeft = 0.0;
+    int ID = 0;
     std::pair<int, bool> leftOverAngle{0, false};
-
+    bool init=false;
+    bool inFormation=false;
+    bool rightInForm;
    
 
 private:
@@ -47,6 +50,7 @@ private:
     std::thread arucoThread;
     std::shared_ptr<bool> holdCamera;
     std::shared_ptr<cv::VideoCapture> capture;
+    
 
     long amountOfUSleepForTrackMarker = 5000;
 
