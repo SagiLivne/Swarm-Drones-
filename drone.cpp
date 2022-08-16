@@ -1,6 +1,6 @@
 
 #include <unistd.h>
-#include "../include/Drone.h"
+#include "../include/drone.h"
 
 drone::drone(int leaderID, bool orientation, double distanceForward, double distanceRightLeft, double distanceHeight) {
 	this->leaderID = leaderID;
@@ -8,6 +8,7 @@ drone::drone(int leaderID, bool orientation, double distanceForward, double dist
 	this->distanceForward = distanceForward;
 	this->distanceRightLeft = distanceRightLeft;
 	this->distanceHeight = distanceHeight;
+	this->angle = 0;  // need to add leter TODO
 }
 
 drone::drone() {
@@ -16,5 +17,6 @@ drone::drone() {
 	this->distanceForward = 0;
 	this->distanceRightLeft = 0;
 	this->distanceHeight = 0;
+	this->angle = 0;
 }
 

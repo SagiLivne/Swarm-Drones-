@@ -25,20 +25,22 @@ public:
     void setStop(bool value) { stop = value; };
 
     void trackMarkerThread();
+    
+    void initialaize(std::vector<cv::Vec3d> localTvecs, std::vector<cv::Vec3d> localRvecs);
+    
+    double forwardDistance(std::vector<cv::Vec3d> localRvecs, std::vector<cv::Vec3d> localTvecs, int Id);
 
     std::pair<int, int> twoClosest(std::vector<cv::Vec3d> localRvecs, std::vector<cv::Vec3d> localTvecs);
 
-    double forwardDistance(std::vector<cv::Vec2d> localRvec, std::vector<cv::Vec2d> localTvec);
+    int ID=-1;
+    bool init=false;
+    bool inFormation=false;
+    bool rightInForm=true;
 
     double upDown = 0.0;
     double forward = 0.0;
     double rightLeft = 0.0;
-    int ID = 0;
     std::pair<int, bool> leftOverAngle{0, false};
-    bool init=false;
-    bool inFormation=false;
-    bool rightInForm;
-   
 
 private:
     bool runCamera;
@@ -50,7 +52,6 @@ private:
     std::thread arucoThread;
     std::shared_ptr<bool> holdCamera;
     std::shared_ptr<cv::VideoCapture> capture;
-    
 
     long amountOfUSleepForTrackMarker = 5000;
 
@@ -63,6 +64,7 @@ private:
 
     void getCameraFeed();
 };
+
 
 
 #endif //INC_2022SUMMERCOURSE_ARUCO_H

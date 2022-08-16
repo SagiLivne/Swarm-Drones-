@@ -6,7 +6,8 @@
 #include <unistd.h>
 #include <deque>
 #include "aruco.h" //Might not need
-#include "../Drone.h"
+#include "../include/drone.h"
+
 
 #define FORWARD 60
 #define RIGHT_LEFT 20 
@@ -16,10 +17,37 @@
 std::deque<drone> buffer;
 bool isLost = false;
 
+
+// update drones movement with regards to leader.
+void updateMovement(drone& drone, aruco& detector) {
+
+
+}
+
+//In case of not finding a leader, moving in the direction of the last frame captured.
+void lostLeader(aruco &detector) {
+    int i=0;
+    if (!isLost) {
+        isLost = true;
+    while(i<5){  // timer for leader search when lost. after 5 seconds of not finding the leader stop searching and stop in place.
+	drone lastFrame = buffer.front();  // 
+        updateMovement(lastFrame, detector);  // 
+        sleep(1000);
+        i++;      
+    }
+  }
+}
+
+
+
 void runAruco(aruco &detector){
     while(true){ //Multiplied by 100 in order to display it in cm.
         std::cout << "forward: " << detector.forward*100 << " right left: " << detector.rightLeft*100 << " updown: " << detector.upDown*100
                   << " angle: " << detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second << std::endl;
+                  
+        if(detector.ID==-1){
+        lostLeader(detector);
+        }
     }
 }
 
@@ -36,36 +64,16 @@ void distances(drone& drone, aruco& detector) {
 }
 
 //Adding new drone frame to the buffer.
-void addToBuffer(drone& drone) {
-    if (buffer.size == BUFFER_SIZE) {
-        drone::drone drone = buffer.pop_back();
-        free(drone);
+void addToBuffer(drone& dr) {
+    if (buffer.size() == BUFFER_SIZE) {
+        drone d1 = buffer.back();
+        buffer.pop_back();
     }
-    buffer.push_front(drone);
+    buffer.push_front(dr);
 }
 
-//In case of not finding a leader, moving in the direction of the last frame captured.
-void lostLeader() {
-    if (!isLost) {
-        isLost = true;
-        Timer t = Timer();  // timer for leader search when lost. after 5 seconds of not finding the leader stop searching and stop in place.
-
-        t.setInterval([&]() {
-            drone::drone lastFrame = buffer.front();  // 
-            updateMovement(lastFrame);  // 
-            }, 1000);
-
-        t.setTimeout([&]() {
-            t.stop(); // stay in place because no leader was found.
-            }, 5000);
-    }
-}
-
-// update drones movement with regards to leader.
-void updateMovement(drone& drone, aruco& detector) {
 
 
-}
 
 // insert a drone into and existing formation
 void insertToFormation() {
@@ -75,7 +83,7 @@ void insertToFormation() {
 int main(){
     std::ifstream programData("../config.json");
 
-    drone::drone drone = new drone::drone();
+    drone d1 ;
 
     nlohmann::json data;
     programData >> data;

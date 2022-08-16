@@ -3,8 +3,7 @@
 //
 
 #include <unistd.h>
-#include "../include/aruco.h" //Might not need
-#include "../Drone.h"
+#include "../include/aruco.h"
 
 std::vector<cv::Mat> aruco::getCameraCalibration(const std::string &path) {
     cv::FileStorage fs(path, cv::FileStorage::READ);
@@ -45,6 +44,7 @@ std::vector<cv::Mat> aruco::getCameraCalibration(const std::string &path) {
     return newCameraParams;
 }
 
+/*
 void aruco::trackMarkerThread() {
     stop = false;
     std::cout << "started track thread" << std::endl;
@@ -58,7 +58,62 @@ void aruco::trackMarkerThread() {
             cv::aruco::detectMarkers(*frame, dictionary, corners, ids);
         } else {
             std::cout << "no frames" << std::endl;
-            lostLeader();
+            sleep(1);
+            continue;
+        }
+        bool canContinue = true;
+        int rightId = 0;
+        /*while (rightId < ids.size()) {
+            if (ids[rightId] != 0) {
+                canContinue = true;
+                break;
+            }
+            rightId++;
+        }
+        // if at least one marker detected
+        if (canContinue) {
+            std::vector<cv::Vec3d> localRvecs, localTvecs;
+            cv::aruco::estimatePoseSingleMarkers(corners, currentMarkerSize, cameraParams[0], cameraParams[1],
+                                                 localRvecs,
+                                                 localTvecs);
+            if (!localRvecs.empty()) {
+                cv::Mat rmat = cv::Mat::eye(3, 3, CV_64FC1);
+                try {
+                    cv::Rodrigues(localRvecs[rightId], rmat);
+                } catch (...) {
+                    std::cout << "coudlnot convert vector to mat" << std::endl;
+                    continue;
+                }
+                auto t = cv::Mat(-rmat.t() * cv::Mat(localTvecs[rightId]));
+                rightLeft = t.at<double>(0);
+                upDown = t.at<double>(1);
+                forward = t.at<double>(2);
+                leftOverAngle = getLeftOverAngleFromRotationVector(localRvecs[rightId]);
+                usleep(amountOfUSleepForTrackMarker);
+            } else {
+                std::cout << "couldnt get R vector" << std::endl;
+            }
+        } else {
+            std::cout << "didnt detect marker" << std::endl;
+        }
+        // usleep(100000);
+    }
+}
+*/
+
+void aruco::trackMarkerThread() {
+    stop = false;
+    std::cout << "started track thread" << std::endl;
+    std::vector<std::vector<cv::Point2f>> corners;
+    const std::vector<cv::Mat> cameraParams = getCameraCalibration(yamlCalibrationPath);
+    const cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(
+            cv::aruco::DICT_ARUCO_ORIGINAL);
+    while (!stop) {
+        std::vector<int> ids;
+        if (frame && !frame->empty()) {
+            cv::aruco::detectMarkers(*frame, dictionary, corners, ids);
+        } else {
+            std::cout << "no frames" << std::endl;
             ID = -1;
             sleep(1);
             continue;
@@ -80,10 +135,10 @@ void aruco::trackMarkerThread() {
                 localTvecs);
 
             if (init) {
-                initialaize(twoClosest(localRvecs, localTvecs);
+                initialaize(localTvecs,localRvecs);
                 init = false;
             }else{
-            rightID = twoClosest(localRvecs, localTvecs).first;
+            rightId = twoClosest(localRvecs, localTvecs).first;
 
             if (!localRvecs.empty()) {
                 cv::Mat rmat = cv::Mat::eye(3, 3, CV_64FC1);
@@ -98,7 +153,7 @@ void aruco::trackMarkerThread() {
                 rightLeft = t.at<double>(0);
                 upDown = t.at<double>(1);
                 forward = t.at<double>(2);
-                ID = rightID;
+                ID = rightId;
                 leftOverAngle = getLeftOverAngleFromRotationVector(localRvecs[rightId]);
                 usleep(amountOfUSleepForTrackMarker);
             }
@@ -111,83 +166,6 @@ void aruco::trackMarkerThread() {
         }
         // usleep(100000);
     }
-}
-
-//initialize drones
-void initialaize(std::pair<int, int> twoClosest, std::vector<cv::Vec3d> localTvecs;) {
-    cv::Mat rmat = cv::Mat::eye(3, 3, CV_64FC1);
-
-    try {
-        cv::Rodrigues(localRvecs[rightId], rmat);
-    }
-    catch (...) {
-        std::cout << "coudlnot convert vector to mat" << std::endl;
-        continue;
-    }
-
-    auto t = cv::Mat(-rmat.t() * cv::Mat(localTvecs[twoClosest.first]));
-    double rightLeftInit = t.at<double>(0);
-
-    auto t = cv::Mat(-rmat.t() * cv::Mat(localTvecs[twoClosest.second]));
-    double rightLeftInit2 = t.at<double>(0);
-     
-    if (rightleftInit < rightLeftInit2) {
-        rightInForm = false;
-    }
-    else {
-        rightInForm = true;
-    }
-
-}
-
-//Returns the two closest markers detected.
-std::pair<int, int> twoClosest(std::vector<cv::Vec3d> localRvecs, std::vector<cv::Vec3d> localTvecs) {
-    double firstMinForward;
-    double secondMinForward;
-    int firstMinID = 0, secondMinID = 0;
-    if (!localRvecs.empty()) {
-        if (localRvecs.size == 1) {
-            return std::make_pair<int, int>(0,0);
-        }
-        firstMinForward = forwardDistance(localRvecs[0], localTvecs[0]);
-        secondMinForward = forwardDistance(localRvecs[1],localTvecs[1]);
-        if (firstMinForward > secondMinForward) {
-            firstMinForward= forwardDistance(localRvecs[1], localTvecs[1]);
-            secondMinforward = forwardDistance(localRvecs[0], localTvecs[0]);
-        }
-        for (int iter = 2; iter < localRvecs.size; iter++) {
-            double iterForward = forwardDistance(localRvecs[iter], localTvecs[iter]);
-            if (firstMinForward > iterForward) {
-                secondMinForward = firstMinForward; 
-                secondMinID = firstMinID;
-                firstMinForward = iterForward;
-                firstMinID = iter;
-            }
-            else {
-                if (secondMinForward > iterForward) {
-                    secondMinForward = iterForward;
-                    secondMinID = iter;
-                }
-            }
-        }
-    } else {
-        std::cout << "couldnt get R vector" << std::endl;
-    }
-    return std::make_pair<int, int> (firstMinID, secondMinID);
-}
-
-//Try to generalize to return t var instead.
-double forwardDistance(std::vector<cv::Vec2d> localRvec, std::vector<cv::Vec2d> localTvec) {
-    cv::Mat rmat = cv::Mat::eye(3, 3, CV_64FC1);
-    try {
-        cv::Rodrigues(localRvec, rmat);
-    }
-    catch (...) {
-        std::cout << "coudlnot convert vector to mat" << std::endl;
-        continue;
-    }
-    auto t = cv::Mat(-rmat.t() * cv::Mat(localTvec));
-    return t.at<double>(2);
 }
 
 void aruco::getEulerAngles(cv::Mat &rotCameraMatrix, cv::Vec3d &eulerAngles) {
@@ -257,9 +235,6 @@ aruco::aruco(std::string &yamlCalibrationPath, std::string &cameraString, float 
 
 }
 
-aruco::aruco(float)
-
-
 aruco::~aruco() {
     stop = true;
     runCamera = false;
@@ -267,3 +242,92 @@ aruco::~aruco() {
     arucoThread.join();
     capture->release();
 }
+
+//Try to generalize to return t var instead.
+double aruco::forwardDistance(std::vector<cv::Vec3d> localRvecs, std::vector<cv::Vec3d> localTvecs, int Id) {
+    cv::Mat rmat = cv::Mat::eye(3, 3, CV_64FC1);
+    try {
+        cv::Rodrigues(localRvecs[Id], rmat);
+    }
+    catch (...) {
+        std::cout << "coudlnot convert vector to mat" << std::endl;
+    }
+    auto t = cv::Mat(-rmat.t() * cv::Mat(localTvecs[Id]));
+    return t.at<double>(2);
+}
+
+
+//Returns the two closest markers detected.
+std::pair<int, int> aruco::twoClosest(std::vector<cv::Vec3d> localRvecs, std::vector<cv::Vec3d> localTvecs) {
+    double firstMinForward;
+    double secondMinForward;
+    int firstMinID = 0, secondMinID = 0;
+    if (!localRvecs.empty()) {
+        if (localRvecs.size() == 1) {
+            return std::make_pair<int, int>(0,0);
+        }
+        firstMinForward = forwardDistance(localRvecs, localTvecs,0);
+        secondMinForward = forwardDistance(localRvecs,localTvecs, 1);
+        if (firstMinForward > secondMinForward) {
+            firstMinForward= forwardDistance(localRvecs, localTvecs, 1);
+            secondMinForward = forwardDistance(localRvecs, localTvecs, 0);
+        }
+        for (int iter = 2; iter < localRvecs.size(); iter++) {
+            double iterForward = forwardDistance(localRvecs, localTvecs,iter);
+            if (firstMinForward > iterForward) {
+                secondMinForward = firstMinForward; 
+                secondMinID = firstMinID;
+                firstMinForward = iterForward;
+                firstMinID = iter;
+            }
+            else {
+                if (secondMinForward > iterForward) {
+                    secondMinForward = iterForward;
+                    secondMinID = iter;
+                }
+            }
+        }
+    } else {
+        std::cout << "couldnt get R vector" << std::endl;
+    }
+    return std::pair<int, int> (firstMinID, secondMinID);
+}
+
+
+
+//initialize drones
+void aruco::initialaize(std::vector<cv::Vec3d> localTvecs, std::vector<cv::Vec3d> localRvecs) {
+    cv::Mat rmat = cv::Mat::eye(3, 3, CV_64FC1);
+    std::pair<int, int> closest = twoClosest(localRvecs, localTvecs);
+    try {
+        cv::Rodrigues(localRvecs[closest.first], rmat);
+    }
+    catch (...) {
+        std::cout << "coudlnot convert vector to mat" << std::endl;
+    }
+
+    auto t1 = cv::Mat(-rmat.t() * cv::Mat(localTvecs[closest.first]));
+    double rightLeftInit = t1.at<double>(0);
+
+    try {
+        cv::Rodrigues(localRvecs[closest.second], rmat);
+    }
+    catch (...) {
+        std::cout << "coudlnot convert vector to mat" << std::endl;
+    }
+    auto t2 = cv::Mat(-rmat.t() * cv::Mat(localTvecs[closest.second]));
+    double rightLeftInit2 = t2.at<double>(0);
+     
+    if (rightLeftInit < rightLeftInit2) {
+        rightInForm = false;
+    }
+    else {
+        rightInForm = true;
+    }
+
+}
+
+
+
+
+
