@@ -86,7 +86,8 @@ void runAruco(aruco &detector, drone &d1){
             	std::cout<<"i="<<i<<std::endl;
             	i++;
             }
-            while(detector.ID==-1);
+            //while(detector.ID==-1);
+      	    detector.init=true;
         }else{
         std::cout<<"  detector"<<detector.init<<std::endl;          
         distances(d1,detector);
