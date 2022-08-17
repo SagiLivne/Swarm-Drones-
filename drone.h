@@ -16,6 +16,6 @@ public:
 
 	drone();
 
-	~drone();
+	//~drone();
 
 };

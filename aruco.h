@@ -33,7 +33,7 @@ public:
     std::pair<int, int> twoClosest(std::vector<cv::Vec3d> localRvecs, std::vector<cv::Vec3d> localTvecs);
 
     int ID=-1;
-    bool init=false;
+    bool init=true;
     bool inFormation=false;
     bool rightInForm=true;
 

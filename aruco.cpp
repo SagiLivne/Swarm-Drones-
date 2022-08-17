@@ -98,8 +98,8 @@ void aruco::trackMarkerThread() {
         }
         // usleep(100000);
     }
-}
-*/
+}*/
+
 
 void aruco::trackMarkerThread() {
     stop = false;
@@ -114,7 +114,6 @@ void aruco::trackMarkerThread() {
             cv::aruco::detectMarkers(*frame, dictionary, corners, ids);
         } else {
             std::cout << "no frames" << std::endl;
-            ID = -1;
             sleep(1);
             continue;
         }
@@ -133,10 +132,12 @@ void aruco::trackMarkerThread() {
             cv::aruco::estimatePoseSingleMarkers(corners, currentMarkerSize, cameraParams[0], cameraParams[1],
                 localRvecs,
                 localTvecs);
-
+	    std::cout<< "init = "<< init << std::endl;
             if (init) {
-                initialaize(localTvecs,localRvecs);
-                init = false;
+		    if (!localRvecs.empty()){
+		        initialaize(localTvecs,localRvecs);
+		        init = false;
+		        }
             }else{
             rightId = twoClosest(localRvecs, localTvecs).first;
 
@@ -153,12 +154,13 @@ void aruco::trackMarkerThread() {
                 rightLeft = t.at<double>(0);
                 upDown = t.at<double>(1);
                 forward = t.at<double>(2);
-                ID = rightId;
+                ID = ids[rightId];
                 leftOverAngle = getLeftOverAngleFromRotationVector(localRvecs[rightId]);
                 usleep(amountOfUSleepForTrackMarker);
             }
             else {
                 std::cout << "couldnt get R vector" << std::endl;
+                ID=-1;
             }
             }
         } else {
@@ -317,13 +319,21 @@ void aruco::initialaize(std::vector<cv::Vec3d> localTvecs, std::vector<cv::Vec3d
     }
     auto t2 = cv::Mat(-rmat.t() * cv::Mat(localTvecs[closest.second]));
     double rightLeftInit2 = t2.at<double>(0);
-     
-    if (rightLeftInit < rightLeftInit2) {
-        rightInForm = false;
+    if(closest.first==closest.second){
+        if(rightLeftInit<0){
+	     rightInForm=false;
+           }else{
+	     	   rightInForm=true;
+         	   }
+      }else{    
+	    if (rightLeftInit < rightLeftInit2) {
+		rightInForm = false;
+	    }
+	    else{
+		rightInForm = true;
+	    }
     }
-    else {
-        rightInForm = true;
-    }
+    inFormation=true;
 
 }
 
