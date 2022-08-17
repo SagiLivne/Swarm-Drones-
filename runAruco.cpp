@@ -70,12 +70,14 @@ void lostLeader(aruco &detector) {
 
 
 void runAruco(aruco &detector, drone &d1){
-    
+    int tmpId;
     while(true){ //Multiplied by 100 in order to display it in cm.
       std::cout<< " detector: "<< std::endl; 
       std::cout << "forward: " << detector.forward*100 << " right left: " << detector.rightLeft*100 << " updown: " << detector.upDown*100
                   << " angle: " << detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <<"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm<<std::endl;
-                  
+       if(detector.ID!=-1){
+       		tmpId=detector.ID;
+       		}           
                   
         
         int i=0;      
@@ -85,6 +87,8 @@ void runAruco(aruco &detector, drone &d1){
                 sleep(1);
             	std::cout<<"i="<<i<<std::endl;
             	i++;
+            	if(detector.ID!=tmpId && detector.ID!=-1)
+            		detector.init=true;
             }
             //while(detector.ID==-1);
       	    detector.init=true;
