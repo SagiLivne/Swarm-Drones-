@@ -136,7 +136,7 @@ void aruco::trackMarkerThread() {
             cv::aruco::estimatePoseSingleMarkers(corners, currentMarkerSize, cameraParams[0], cameraParams[1],
                 localRvecs,
                 localTvecs);
-		std::cout<< "init: "<< init<<std::endl;
+		//std::cout<< "init: "<< init<<std::endl;
             if (init) {
 		    if (!localRvecs.empty()){
 		        initialaize(localTvecs,localRvecs);
@@ -156,15 +156,15 @@ void aruco::trackMarkerThread() {
                 }
 	        //std::cout << "I got into processing" << std::endl;
                 auto t = cv::Mat(-rmat.t() * cv::Mat(localTvecs[rightId]));
-                rightLeft = t.at<double>(0);
-                upDown = t.at<double>(1);
-                forward = t.at<double>(2);
+                rightLeft = t.at<double>(0) * 100;
+                upDown = t.at<double>(1) * 100;
+                forward = t.at<double>(2) * 100;
                 ID = ids[rightId];
                 leftOverAngle = getLeftOverAngleFromRotationVector(localRvecs[rightId]);
                 usleep(amountOfUSleepForTrackMarker);
             }
             else {
-                std::cout << "couldnt get R vector" << std::endl;
+               // std::cout << "couldnt get R vector" << std::endl;
                 ID=-1;
             }
             }
@@ -293,7 +293,7 @@ std::pair<int, int> aruco::twoClosest(std::vector<cv::Vec3d> localRvecs, std::ve
             }
         }
     } else {
-        std::cout << "couldnt get R vector" << std::endl;
+        //std::cout << "couldnt get R vector" << std::endl;
     }
     return std::pair<int, int> (firstMinID, secondMinID);
 }
