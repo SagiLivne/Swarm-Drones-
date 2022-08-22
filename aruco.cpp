@@ -107,12 +107,18 @@ void aruco::trackMarkerThread() {
     std::vector<std::vector<cv::Point2f>> corners;
     const std::vector<cv::Mat> cameraParams = getCameraCalibration(yamlCalibrationPath);
     const cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(
-            cv::aruco::DICT_ARUCO_ORIGINAL);
+            cv::aruco::DICT_4X4_100);
+            
+    cv::Mat imageCopy;
     while (!stop) {
         std::vector<int> ids;
         if (frame && !frame->empty()) {
             cv::aruco::detectMarkers(*frame, dictionary, corners, ids);
-            cv::imshow("aruco", *frame);
+            
+            (*frame).copyTo(imageCopy);
+            cv::aruco::drawDetectedMarkers(imageCopy, corners, ids);
+            //cv::imshow("aruco", imageCopy);
+            
         cv::waitKey(1);
         } else {
             std::cout << "no frames" << std::endl;
@@ -133,16 +139,23 @@ void aruco::trackMarkerThread() {
         
 
             std::vector<cv::Vec3d> localRvecs, localTvecs;
+            //std::cout<< corners[0] << "  " <<corners[1]<< "  " << corners[2]<< "  " <<corners[3]<< std::endl;
             cv::aruco::estimatePoseSingleMarkers(corners, currentMarkerSize, cameraParams[0], cameraParams[1],
                 localRvecs,
                 localTvecs);
+                
+                for(int i = 0; i <ids.size(); i++){
+                	cv::drawFrameAxes(imageCopy, cameraParams[0], cameraParams[1], localRvecs[i], localTvecs[i], 0.1);
+                }
+                cv::imshow("aruco", imageCopy);
 		//std::cout<< "init: "<< init<<std::endl;
+            
             if (init) {
 		    if (!localRvecs.empty()){
 		        initialaize(localTvecs,localRvecs);
 		        init = false;
 		        }
-            }else{
+            } else {
             rightId = twoClosest(localRvecs, localTvecs).first;
 
             if (!localRvecs.empty()) {
@@ -154,7 +167,6 @@ void aruco::trackMarkerThread() {
                     std::cout << "coudlnot convert vector to mat" << std::endl;
                     continue;
                 }
-	        //std::cout << "I got into processing" << std::endl;
                 auto t = cv::Mat(-rmat.t() * cv::Mat(localTvecs[rightId]));
                 rightLeft = t.at<double>(0) * 100;
                 upDown = t.at<double>(1) * 100;
@@ -162,6 +174,7 @@ void aruco::trackMarkerThread() {
                 ID = ids[rightId];
                 leftOverAngle = getLeftOverAngleFromRotationVector(localRvecs[rightId]);
                 usleep(amountOfUSleepForTrackMarker);
+               
             }
             else {
                // std::cout << "couldnt get R vector" << std::endl;
@@ -324,16 +337,16 @@ void aruco::initialaize(std::vector<cv::Vec3d> localTvecs, std::vector<cv::Vec3d
     double rightLeftInit2 = t2.at<double>(0);
     if(closest.first==closest.second){
         if(rightLeftInit<0){
-	     rightInForm=false;
+	     rightInForm=-1;
            }else{
-	     	   rightInForm=true;
+	     	   rightInForm=1;
          	   }
       }else{    
 	    if (rightLeftInit < rightLeftInit2) {
-		rightInForm = false;
+		rightInForm = -1;
 	    }
 	    else{
-		rightInForm = true;
+		rightInForm = 1;
 	    }
     }
     inFormation=true;

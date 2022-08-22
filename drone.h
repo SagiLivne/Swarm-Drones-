@@ -11,6 +11,7 @@ public:
 	double distanceRightLeft;
 	double distanceHeight;
 	double angle;
+	bool commandFlag=1;
 
 	drone(int leaderID, bool orientation, double distanceForward, double distanceRightLeft, double distanceHeight);
 

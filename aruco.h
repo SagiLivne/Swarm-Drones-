@@ -35,7 +35,7 @@ public:
     int ID=-1;
     bool init=true;
     bool inFormation=false;
-    bool rightInForm=true;
+    int rightInForm=1;
 
     double upDown = 0.0;
     double forward = 0.0;

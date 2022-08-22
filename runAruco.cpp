@@ -11,14 +11,14 @@
 //#include <math>
 #include <ctello.h>
 
-#define FORWARD 40
+#define FORWARD 80
 #define RIGHT_LEFT 30 
-#define HEIGHT 3 
+//#define HEIGHT 10 
 #define BUFFER_SIZE 10	
 #define RADIUS 50
 #define LIM_FORWARD 20
 #define LIM_RIGHT_LEFT 20
-#define LIM_HEIGHT 2
+#define LIM_HEIGHT 10
 #define LIM_ANGLE 10
 
 std::deque<drone> buffer;
@@ -29,10 +29,11 @@ const std::string noMovement = "0 ";
 
 // update drones movement with regards to leader.
 void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
+	int i = 0;
 	while(true) {
 		
 		std::string command = "rc ";
-		std::cout << "--------------------------- I got into update movement!!! ---------------------------" << std:: endl;
+		
 		if (drone.distanceRightLeft){
 			if(drone.distanceRightLeft > 0)
 				command += "-";
@@ -42,7 +43,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 			command += noMovement;
 
 		if (drone.distanceForward){
-			if(drone.distanceForward > 0)
+			if(drone.distanceForward < 0)
 				command += "-";
 			command += movement;
 		}
@@ -65,17 +66,23 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 		else
 			command += noMovement;
 		
-		std::cout << "--------------------------- " << command << "drone:" << drone.distanceRightLeft << "   "<< drone.distanceForward << "   " << drone.distanceHeight << "   " << drone.angle << "----------------------init: "<< detector.init << std::endl;
-		try{
+		std::cout <<  command << "drone:" << "forward: "<< drone.distanceForward << " rightLeft :"<< drone.distanceRightLeft<< " height: "<<drone.distanceHeight<< " angle: "<< drone.angle  << "Right or Left " << detector.rightInForm << " forward: " << detector.forward << " right left: " << detector.rightLeft << " updown: " << detector.upDown
+                  << " angle: " << detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <<"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm<< " init: " << detector.init << std::endl;
+                  
+		/*try{
 			if(!detector.init)
-				tello.SendCommand(command);	
+				//tello.SendCommand(command);	
 			//sleep(1);
 		}catch(...){
 		
 		}
-		
+		*/
 	//std::cout << "--------------------------- I finished update movement!!! ---------------------------" << std:: endl;
-	
+	if(i == 1000){
+		tello.SendCommand("battery?");
+		i = 0;	
+	} else
+		i++;
 	}
 }
 
@@ -95,8 +102,13 @@ void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 		else
 			drone.distanceForward = 0;
 
-		if (std::abs(std::abs(detector.rightLeft) - RIGHT_LEFT) > LIM_RIGHT_LEFT)
-			drone.distanceRightLeft = std::abs(detector.rightLeft) - RIGHT_LEFT;
+		if (std::abs(std::abs(detector.rightLeft) - RIGHT_LEFT) > LIM_RIGHT_LEFT) {
+			if(detector.rightLeft - (RIGHT_LEFT * detector.rightInForm) > 0)
+				drone.distanceRightLeft = -1;
+			else
+				drone.distanceRightLeft = 1;
+			//drone.distanceRightLeft = std::abs(detector.rightLeft) - RIGHT_LEFT;
+		}
 		else
 			drone.distanceRightLeft = 0;
 
@@ -112,7 +124,7 @@ void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 		drone.angle = detector.leftOverAngle.first; // Maybe we shall add angle limit.
 		drone.angle = detector.leftOverAngle.second ? -drone.angle : drone.angle;
 		isLost = false;
-		circularAngle(drone, drone.angle);
+		//circularAngle(drone, drone.angle);
 
 		//std::cout<<" drone: "<< std::endl;
 		//std::cout<<"forward: "<< drone.distanceForward << " rightLeft :"<< drone.distanceRightLeft<< " height: "<<drone.distanceHeight<< " angle: "<< drone.angle  << std::endl;
@@ -143,10 +155,10 @@ void runAruco(aruco &detector, drone &d1, ctello::Tello& tello){
     
     
     if(printFlag==100){
-      /*std::cout<< " detector: "<< std::endl; 
-      std::cout << "forward: " << detector.forward*100 << " right left: " << detector.rightLeft*100 << " updown: " << detector.upDown*100
-                  << " angle: " << detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <<"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm<< " init: " << detector.init << std::endl;
-                  //printFlag=0;*/
+      //std::cout<< " detector: "<< std::endl; 
+      /*std::cout << "forward: " << detector.forward << " right left: " << detector.rightLeft << " updown: " << detector.upDown
+                  << " angle: " << detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <<"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm<< " init: " << detector.init << std::endl;*/
+                  //printFlag=0;
                   }
                  // printFlag++;
        if(detector.ID!=-1){
@@ -170,6 +182,7 @@ void runAruco(aruco &detector, drone &d1, ctello::Tello& tello){
         }else{
         //std::cout<<"  detector"<<detector.init<<std::endl;          
         distances(d1,detector, tello);
+        sleep(1);
         }
     }
 }
@@ -207,35 +220,31 @@ int main(){
     nlohmann::json data;
     programData >> data;
     programData.close();
-         std::string droneName = data["DroneName"];
+    std::string droneName = data["DroneName"];
     std::string commandString = "nmcli c up " + droneName;
     const char *command = commandString.c_str();
     system(command);
     ctello::Tello tello;
-        tello.SendCommandWithResponse("streamon");
+    tello.SendCommandWithResponse("streamon");
     std::string yamlCalibrationPath = data["yamlCalibrationPath"];
     bool isCameraString = data["isCameraString"];
     float currentMarkerSize = data["currentMarkerSize"];
     
-    tello.SendCommandWithResponse("takeoff");  
+    //tello.SendCommandWithResponse("takeoff");  
 
     
     if (isCameraString){
         std::string cameraString = data["cameraString"];
         aruco detector(yamlCalibrationPath,cameraString,currentMarkerSize);
-//	auto movementThread = std::thread(updateMovement, (std::ref(detector), std::ref(d1), std::ref(tello)));        
-	//std::thread movementThread(&updateMovement, std::ref(detector), std::ref(d1), std::ref(tello));
  	std::thread movementThread([&] { updateMovement(d1, detector,tello); } );        
         runAruco(detector,d1, tello);       
-            movementThread.join(); 
+        movementThread.join(); 
     }else{
         int cameraPort = data["cameraPort"];
         aruco detector(yamlCalibrationPath,cameraPort,currentMarkerSize);
-        //auto movementThread = std::thread(updateMovement, (std::ref(detector), std::ref(d1), std::ref(tello)));        
-	//std::thread movementThread(&updateMovement, std::ref(detector), std::ref(d1), std::ref(tello));             
- 	std::thread movementThread([&] { updateMovement(d1, detector,tello); } );        
+	std::thread movementThread([&] { updateMovement(d1, detector,tello); } );        
         runAruco(detector,d1, tello);
-         movementThread.join();   
+        movementThread.join();   
     }
     
     //tello.SendCommandWithResponse("land");
