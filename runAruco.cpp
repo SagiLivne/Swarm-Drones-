@@ -19,7 +19,7 @@
 #define LIM_FORWARD 20
 #define LIM_RIGHT_LEFT 10
 #define LIM_HEIGHT 5
-#define LIM_ANGLE 10
+#define LIM_ANGLE 20
 
 std::deque<drone> buffer;
 bool isLost = false;
@@ -70,23 +70,25 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 			//if(drone.angle > 0)
 			//	command += "-";	
 			//command += movement;
-			command += std::to_string(- drone.angle - LIM_ANGLE);
+			command += std::to_string(drone.angle);
 			command+=" ";
 		}
 		else
 			command += noMovement;
 		
-		/*std::cout <<  command << "drone:" << "forward: "<< drone.distanceForward << " rightLeft :"<< drone.distanceRightLeft<< " height: "<<drone.distanceHeight<< " angle: "<< drone.angle  << "Right or Left " << detector.rightInForm << " forward: " << detector.forward << " right left: " << detector.rightLeft << " updown: " << detector.upDown
-                  << " angle: " << detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <<"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm<< " init: " << detector.init << std::endl;
-                  */
+                  
 		try {
-			if(!detector.init){
-				tello.SendCommand(command);	
-				//std::cout << "sent command" << std::endl;
+			if(detector.ID==-1){
+				tello.SendCommand("rc 0 0 0 0");
+			}else{
+				if(!detector.init){
+					tello.SendCommand(command);	
+					//std::cout << "sent command" << std::endl;
+				}
 			}
-			//sleep(0.05);
-			std::cout << command << "drone:" << "forward: "<< drone.distanceForward << " rightLeft :" << drone.distanceRightLeft<< " height: "<< drone.distanceHeight<< " angle: "<< drone.angle  << "Right or Left " << detector.rightInForm << " forward: " << detector.forward <<" right left: " << detector.rightLeft << " updown: " << detector.upDown
-                  << " angle: " <<  detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <<"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm<< " init: " << detector.init << std::endl;
+			sleep(0.05);
+			std::cout << command << "drone:" <</* "forward: "<< drone.distanceForward << " rightLeft :" << drone.distanceRightLeft<< " height: "<< drone.distanceHeight<<*/ " angle: "<< drone.angle  << "Right or Left " << detector.rightInForm /*<< " forward: " << detector.forward <<" right left: " << detector.rightLeft << " updown: " << detector.upDown
+                 */ << " angle: " <<  detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <</*"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm<< " init: " << detector.init <<*/ std::endl;
 		}catch(...){
 		
 		}
@@ -102,7 +104,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 
 
 void circularAngle(drone &d1, double angle){
-	d1.distanceForward += RADIUS - RADIUS * std::cos(angle * M_PI / 180);
+	d1.distanceForward += RADIUS - (RADIUS * std::cos(angle * M_PI / 180));
 	d1.distanceRightLeft += RADIUS * std::sin(angle * M_PI / 180);
 	
 }
@@ -129,8 +131,8 @@ void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 		drone.distanceHeight = std::abs(detector.upDown) > LIM_HEIGHT ? detector.upDown - LIM_HEIGHT: detector.upDown - LIM_HEIGHT;
 
 		if (detector.leftOverAngle.first > LIM_ANGLE){
-			drone.angle = detector.leftOverAngle.first*0.5; // Maybe we shall add angle limit.
-			drone.angle = detector.leftOverAngle.second ? -drone.angle : drone.angle;
+			drone.angle = (detector.leftOverAngle.first - (LIM_ANGLE*0.5)) * 1.5; // Maybe we shall add angle limit.
+			drone.angle = detector.leftOverAngle.second ? drone.angle : -1 * drone.angle;
 		}else
 			drone.angle = 0;
 

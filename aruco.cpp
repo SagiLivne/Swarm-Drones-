@@ -154,7 +154,7 @@ void aruco::trackMarkerThread() {
                 localRvecs,
                 localTvecs);
                 
-                for(int i = 0; i <ids.size(); i++){
+                for(int i = 0; i < ids.size(); i++){
                 	cv::drawFrameAxes(imageCopy, cameraParams[0], cameraParams[1], localRvecs[i], localTvecs[i], 0.1);
                 }
                 cv::imshow("aruco", imageCopy);
