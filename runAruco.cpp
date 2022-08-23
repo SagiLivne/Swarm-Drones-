@@ -39,7 +39,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 	       if(detector.ID!=-1 ){
        		tmpId=detector.ID;
        		}  
-		if(detector.ID==-1&& tmpId!=-1){
+		if(detector.ID==-1 && tmpId!=-1){
 		int i=0;
 		    while(i<5){// timer for leader search when lost. after 5 seconds of not finding the leader stop searching and stop in place.
 		        //lostLeader(detector, tello);
@@ -53,7 +53,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 		    detector.init=true;
 		    while(detector.ID==-1 && i<20){
 			    sleep(2); 
-			    tello.SendCommand("rc 0 0 0 40");
+			    tello.SendCommand("rc 0 0 0 25");
 		    	    i++;
 		    }
 		    if(detector.ID==-1)
@@ -75,7 +75,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 		if (drone.distanceForward){
 			//if(drone.distanceForward < 0)
 				//command += "-";
-			command +=std::to_string(drone.distanceForward*0.5);
+			command +=std::to_string(drone.distanceForward*0.35);
 			command+=" ";
 		}
 		else
@@ -84,7 +84,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 		if (drone.distanceHeight){
 			//if(drone.distanceHeight < 0)
 			//	command += "-";
-			command += std::to_string(- drone.distanceHeight - LIM_HEIGHT);
+			command += std::to_string(drone.distanceHeight);
 			command+=" ";
 		}
 		else
@@ -94,7 +94,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 			//if(drone.angle > 0)
 			//	command += "-";	
 			//command += movement;
-			command += std::to_string(drone.angle);
+			command += std::to_string(drone.angle * 0.8);
 			command+=" ";
 		}
 		else
@@ -103,13 +103,14 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
                   
 		try {
 				
-			if(!detector.init)
+			if(!detector.init || detector.ID!=-1)
 				tello.SendCommand(command);	
 			else 
 				tello.SendCommand("rc 0 0 0 0");
+				
 			sleep(0.05);
-			std::cout << command << "drone:" <</* "forward: "<< drone.distanceForward << " rightLeft :" << drone.distanceRightLeft<< " height: "<< drone.distanceHeight<<*/ " angle: "<< drone.angle  << "Right or Left " << detector.rightInForm /*<< " forward: " << detector.forward <<" right left: " << detector.rightLeft << " updown: " << detector.upDown
-                 */ << " angle: " <<  detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <</*"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm<< " init: " << detector.init <<*/ std::endl;
+			std::cout << command << "drone:" <<" height: "<< drone.distanceHeight/* "forward: "<< drone.distanceForward << " rightLeft :" << drone.distanceRightLeft<< << " angle: "<< drone.angle  << "Right or Left " << detector.rightInForm /*<< " forward: " << detector.forward <<" right left: " << detector.rightLeft << " updown: " << detector.upDown	
+                 /* << " angle: " <<  detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <</*"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm*/<< " init: " << detector.init << " Roll? :" << detector.rollAngle <<" updown: " << detector.upDown << std::endl;
 		}catch(...){
 		
 		}
@@ -125,9 +126,10 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 }
 
 
-void circularAngle(drone &d1, double angle){
-	d1.distanceForward += RADIUS - (RADIUS * std::cos(angle * M_PI / 180));
-	d1.distanceRightLeft += RADIUS * std::sin(angle * M_PI / 180);
+void circularAngle(drone &d1, double angle,aruco  &detector){
+	double radius = std::sqrt(std::pow(detector.forward,2) + std::pow(detector.rightLeft,2)) ;
+	d1.distanceForward = (radius - (radius * std::cos(angle * M_PI / 180)));
+	d1.distanceRightLeft = (radius * std::sin(angle * M_PI / 180)) * 0.3;
 	
 }
 
@@ -140,21 +142,36 @@ void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 		else
 			drone.distanceForward = 0;
 
-		if (std::abs(std::abs(detector.rightLeft) /*- RIGHT_LEFT*/) > LIM_RIGHT_LEFT) {
+		if (std::abs(std::abs(detector.rightLeft - detector.leftOverAngle.first) /*9- RIGHT_LEFT*/) > LIM_RIGHT_LEFT) {
 			if(detector.rightLeft /*- (RIGHT_LEFT * detector.rightInForm) */> 0)
-				drone.distanceRightLeft = -detector.rightLeft + LIM_RIGHT_LEFT - detector.leftOverAngle.first;
+				drone.distanceRightLeft = -detector.rightLeft + LIM_RIGHT_LEFT * 0.5- detector.leftOverAngle.first;
 			else
-				drone.distanceRightLeft = -detector.rightLeft + LIM_RIGHT_LEFT - detector.leftOverAngle.first;
+				drone.distanceRightLeft = -detector.rightLeft + LIM_RIGHT_LEFT * 0.5 - detector.leftOverAngle.first;
 			//drone.distanceRightLeft = std::abs(detector.rightLeft) - RIGHT_LEFT;
 		}
 		else
 			drone.distanceRightLeft = 0;
-
-		drone.distanceHeight = std::abs(detector.upDown) > LIM_HEIGHT ? detector.upDown - LIM_HEIGHT: detector.upDown - LIM_HEIGHT;
+		
+		/*if(detector.rollAngle > 0){
+			std::cout<<"upDown: "<<detector.upDown<<"angle: "<< detector.rollAngle<<std::endl;
+			detector.upDown = detector.upDown +(180-detector.rollAngle)*0.005;
+		} else {
+			detector.upDown = detector.upDown -(180 + detector.rollAngle)*0.005;
+		}*/
+		
+		if(std::abs(detector.upDown) > LIM_HEIGHT){
+			if(detector.upDown > 0)
+				drone.distanceHeight = -(detector.upDown - LIM_HEIGHT * 0.5);
+			else
+				drone.distanceHeight = -(detector.upDown + LIM_HEIGHT * 0.5);
+		} else 
+			drone.distanceHeight = 0;
+		
 
 		if (detector.leftOverAngle.first > LIM_ANGLE){
-			drone.angle = (detector.leftOverAngle.first - (LIM_ANGLE*0.5)) * 1.5; // Maybe we shall add angle limit.
+			drone.angle = (detector.leftOverAngle.first - (LIM_ANGLE*0.5)) ; // Maybe we shall add angle limit.
 			drone.angle = detector.leftOverAngle.second ? drone.angle : -1 * drone.angle;
+			circularAngle(drone, detector.leftOverAngle.second ? detector.leftOverAngle.first : (-detector.leftOverAngle.first), detector);
 		}else
 			drone.angle = 0;
 
@@ -163,7 +180,7 @@ void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 		//drone.angle = detector.leftOverAngle.first; // Maybe we shall add angle limit.
 		//drone.angle = detector.leftOverAngle.second ? -drone.angle : drone.angle;
 		isLost = false;
-		//circularAngle(drone, drone.angle);
+		//circularAngle(drone, drone.angle, detector);
 
 		//std::cout<<" drone: "<< std::endl;
 		//std::cout<<"forward: "<< drone.distanceForward << " rightLeft :"<< drone.distanceRightLeft<< " height: "<<drone.distanceHeight<< " angle: "<< drone.angle  << std::endl;

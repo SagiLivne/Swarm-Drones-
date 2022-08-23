@@ -41,6 +41,7 @@ public:
     double forward = 0.0;
     double rightLeft = 0.0;
     std::pair<int, bool> leftOverAngle{0, false};
+    int rollAngle = 0;
 
 private:
     bool runCamera;
@@ -61,6 +62,8 @@ private:
     void getEulerAngles(cv::Mat &rotCameraMatrix, cv::Vec3d &eulerAngles);
 
     std::pair<int, bool> getLeftOverAngleFromRotationVector(const cv::Vec<double, 3> &rvec);
+    
+    int getHorizontalAngleFromRotationVector(const cv::Vec<double, 3> &rvec);
 
     void getCameraFeed();
 };
