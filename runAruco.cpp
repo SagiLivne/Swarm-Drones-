@@ -34,8 +34,32 @@ const std::string horizontalMovement = "";
 // update drones movement with regards to leader.
 void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 	//int i = 0;
+	int tmpId=-1;
 	while(true) {
-		
+	       if(detector.ID!=-1 ){
+       		tmpId=detector.ID;
+       		}  
+		if(detector.ID==-1&& tmpId!=-1){
+		int i=0;
+		    while(i<5){// timer for leader search when lost. after 5 seconds of not finding the leader stop searching and stop in place.
+		        //lostLeader(detector, tello);
+		        //sleep(0.25); 
+		    	//std::cout<<"i="<<i<<std::endl;
+		    	i++;
+		    	if(detector.ID!=tmpId && detector.ID!=-1)
+		    		detector.init=true;
+		    }
+		    i=0;
+		    detector.init=true;
+		    while(detector.ID==-1 && i<20){
+			    sleep(2); 
+			    tello.SendCommand("rc 0 0 0 40");
+		    	    i++;
+		    }
+		    if(detector.ID==-1)
+		    	tello.SendCommandWithResponse("land");
+      	    			
+        }else{
 		std::string command = "rc ";
 		
 		if (drone.distanceRightLeft){
@@ -78,14 +102,11 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 		
                   
 		try {
-			if(detector.ID==-1){
+				
+			if(!detector.init)
+				tello.SendCommand(command);	
+			else 
 				tello.SendCommand("rc 0 0 0 0");
-			}else{
-				if(!detector.init){
-					tello.SendCommand(command);	
-					//std::cout << "sent command" << std::endl;
-				}
-			}
 			sleep(0.05);
 			std::cout << command << "drone:" <</* "forward: "<< drone.distanceForward << " rightLeft :" << drone.distanceRightLeft<< " height: "<< drone.distanceHeight<<*/ " angle: "<< drone.angle  << "Right or Left " << detector.rightInForm /*<< " forward: " << detector.forward <<" right left: " << detector.rightLeft << " updown: " << detector.upDown
                  */ << " angle: " <<  detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <</*"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm<< " init: " << detector.init <<*/ std::endl;
@@ -100,6 +121,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 	} else
 		i++;*/
 	}
+	}
 }
 
 
@@ -112,7 +134,7 @@ void circularAngle(drone &d1, double angle){
 
 void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 	//std::cout<< "forward---:::"<<detector.forward<< "forward"<<detector.forward- FORWARD<< std::endl;
-	if (detector.inFormation == true) {
+	if (!detector.init) {
 		if (std::abs(detector.forward - FORWARD) > LIM_FORWARD)
 			drone.distanceForward = detector.forward - FORWARD + 0.5*LIM_FORWARD;
 		else
@@ -166,40 +188,10 @@ void lostLeader(aruco &detector, ctello::Tello& tello) {
 
 
 void runAruco(aruco &detector, drone &d1, ctello::Tello& tello){
-    int tmpId;
-    int printFlag=100;
     while(true){ //Multiplied by 100 in order to display it in cm.
     
-    
-    if(printFlag==100){
-      //std::cout<< " detector: "<< std::endl; 
-      /*std::cout << "forward: " << detector.forward << " right left: " << detector.rightLeft << " updown: " << detector.upDown
-                  << " angle: " << detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <<"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm<< " init: " << detector.init << std::endl;*/
-                  //printFlag=0;
-                  }
-                 // printFlag++;
-       if(detector.ID!=-1){
-       		tmpId=detector.ID;
-       		}           
-                  
-        
-        int i=0;      
-        if(detector.ID==-1){
-            while(i<5){// timer for leader search when lost. after 5 seconds of not finding the leader stop searching and stop in place.
-                //lostLeader(detector, tello);
-                //sleep(1); 
-            	//std::cout<<"i="<<i<<std::endl;
-            	i++;
-            	if(detector.ID!=tmpId && detector.ID!=-1)
-            		detector.init=true;
-            }
-            detector.init=true;
-            while(detector.ID==-1);
-      	    
-        }else{
-        //std::cout<<"  detector"<<detector.init<<std::endl;          
-        distances(d1,detector, tello);
-        
+        if(detector.ID!=-1){        
+        	distances(d1,detector, tello);
         }
     }
 }
