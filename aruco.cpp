@@ -107,15 +107,26 @@ void aruco::trackMarkerThread() {
     std::vector<std::vector<cv::Point2f>> corners;
     const std::vector<cv::Mat> cameraParams = getCameraCalibration(yamlCalibrationPath);
     const cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(
-            cv::aruco::DICT_4X4_100);
+            cv::aruco::DICT_ARUCO_ORIGINAL/*DICT_4X4_100*/);
             
     cv::Mat imageCopy;
     while (!stop) {
         std::vector<int> ids;
         if (frame && !frame->empty()) {
             cv::aruco::detectMarkers(*frame, dictionary, corners, ids);
-            
             (*frame).copyTo(imageCopy);
+            
+                 // blur is contro by size of the block Size(x,y) of moving windows
+    /*blur(*frame, imageCopy, cv::Size(3 ,3));
+    medianBlur(*frame, imageCopy, 5);*/
+            
+            
+            
+            
+            
+            
+            
+            
             cv::aruco::drawDetectedMarkers(imageCopy, corners, ids);
             //cv::imshow("aruco", imageCopy);
             
@@ -139,7 +150,6 @@ void aruco::trackMarkerThread() {
         
 
             std::vector<cv::Vec3d> localRvecs, localTvecs;
-            //std::cout<< corners[0] << "  " <<corners[1]<< "  " << corners[2]<< "  " <<corners[3]<< std::endl;
             cv::aruco::estimatePoseSingleMarkers(corners, currentMarkerSize, cameraParams[0], cameraParams[1],
                 localRvecs,
                 localTvecs);
@@ -148,7 +158,7 @@ void aruco::trackMarkerThread() {
                 	cv::drawFrameAxes(imageCopy, cameraParams[0], cameraParams[1], localRvecs[i], localTvecs[i], 0.1);
                 }
                 cv::imshow("aruco", imageCopy);
-		//std::cout<< "init: "<< init<<std::endl;
+		
             
             if (init) {
 		    if (!localRvecs.empty()){
