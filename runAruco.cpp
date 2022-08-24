@@ -5,21 +5,21 @@
 #include <nlohmann/json.hpp>
 #include <unistd.h>
 #include <deque>
-#include "aruco.h" //Might not need
+#include "aruco.h"
 #include "../include/drone.h"
 #include <cmath>
-//#include <math>
 #include <ctello.h>
 
-#define FORWARD 100
-#define RIGHT_LEFT 30 
-//#define HEIGHT 10 
+#define FORWARD 120
+#define LEFT 30
+#define RIGHT 15
 #define BUFFER_SIZE 10	
 #define RADIUS 50
 #define LIM_FORWARD 20
-#define LIM_RIGHT_LEFT 10
-#define LIM_HEIGHT 5
-#define LIM_ANGLE 20
+#define LIM_RIGHT_LEFT 20
+#define LIM_HEIGHT 8
+#define LIM_ANGLE 15
+#define LIM_ANGLE_CIRCLE 35
 
 std::deque<drone> buffer;
 bool isLost = false;
@@ -33,28 +33,30 @@ const std::string horizontalMovement = "";
 
 // update drones movement with regards to leader.
 void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
-	//int i = 0;
+	
 	int tmpId=-1;
+	
 	while(true) {
+
 	       if(detector.ID!=-1 ){
        		tmpId=detector.ID;
        		}  
 		if(detector.ID==-1 && tmpId!=-1){
 		int i=0;
-		    while(i<5){// timer for leader search when lost. after 5 seconds of not finding the leader stop searching and stop in place.
+		    while(i<10){// timer for leader search when lost. after 5 seconds of not finding the leader stop searching and stop in place.
 		        //lostLeader(detector, tello);
-		        //sleep(0.25); 
-		    	//std::cout<<"i="<<i<<std::endl;
+		        sleep(0.25); 
 		    	i++;
-		    	if(detector.ID!=tmpId && detector.ID!=-1)
-		    		detector.init=true;
+
 		    }
+
 		    i=0;
-		    detector.init=true;
 		    while(detector.ID==-1 && i<20){
 			    sleep(2); 
 			    tello.SendCommand("rc 0 0 0 25");
 		    	    i++;
+    		    if(detector.ID!=tmpId && detector.ID!=-1)
+	    		detector.init=true;
 		    }
 		    if(detector.ID==-1)
 		    	tello.SendCommandWithResponse("land");
@@ -63,27 +65,21 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 		std::string command = "rc ";
 		
 		if (drone.distanceRightLeft){
-			//if(drone.distanceRightLeft < 0)
-				//command += "-";
-				
-			command += std::to_string(drone.distanceRightLeft*0.5);	
+			command += std::to_string(drone.distanceRightLeft*0.4);	
 			command+=" ";
 		}
 		else
 			command += noMovement;
 
 		if (drone.distanceForward){
-			//if(drone.distanceForward < 0)
-				//command += "-";
-			command +=std::to_string(drone.distanceForward*0.35);
+			command +=std::to_string(drone.distanceForward*0.4);
 			command+=" ";
 		}
 		else
 			command += noMovement;
 
+
 		if (drone.distanceHeight){
-			//if(drone.distanceHeight < 0)
-			//	command += "-";
 			command += std::to_string(drone.distanceHeight);
 			command+=" ";
 		}
@@ -91,10 +87,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 			command += noMovement;
 
 		if (drone.angle){
-			//if(drone.angle > 0)
-			//	command += "-";	
-			//command += movement;
-			command += std::to_string(drone.angle * 0.8);
+			command += std::to_string(drone.angle * 1.2);
 			command+=" ";
 		}
 		else
@@ -107,20 +100,15 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 				tello.SendCommand(command);	
 			else 
 				tello.SendCommand("rc 0 0 0 0");
-				
+			
 			sleep(0.05);
-			std::cout << command << "drone:" <<" height: "<< drone.distanceHeight/* "forward: "<< drone.distanceForward << " rightLeft :" << drone.distanceRightLeft<< << " angle: "<< drone.angle  << "Right or Left " << detector.rightInForm /*<< " forward: " << detector.forward <<" right left: " << detector.rightLeft << " updown: " << detector.upDown	
-                 /* << " angle: " <<  detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <</*"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm*/<< " init: " << detector.init << " Roll? :" << detector.rollAngle <<" updown: " << detector.upDown << std::endl;
+			std::cout << command /*<< "drone:" <<" height: "<< drone.distanceHeight << "forward: "<< drone.distanceForward << " rightLeft :" << drone.distanceRightLeft<< << " angle: "<< drone.angle*/  << "Right or Left " << detector.rightInForm /*<< " forward: " << detector.forward*/ <<" right-left: " << detector.rightLeft /*<< " updown: " << detector.upDown	
+                 /* << " angle: " <<  detector.leftOverAngle.first << " clockwise: " << detector.leftOverAngle.second <<"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm */<< "Angle: " << (detector.leftOverAngle.second ? detector.leftOverAngle.first : (-detector.leftOverAngle.first))/*<< " init: " << detector.init /*<< " Roll? :" << detector.rollAngle <<" updown: " << detector.upDown */<< std::endl;
+                 
 		}catch(...){
 		
 		}
 		
-	//std::cout << "--------------------------- I finished update movement!!! ---------------------------" << std:: endl;
-	/*if(i == 1000){
-		tello.SendCommand("battery?");
-		i = 0;	
-	} else
-		i++;*/
 	}
 	}
 }
@@ -129,49 +117,86 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 void circularAngle(drone &d1, double angle,aruco  &detector){
 	double radius = std::sqrt(std::pow(detector.forward,2) + std::pow(detector.rightLeft,2)) ;
 	d1.distanceForward = (radius - (radius * std::cos(angle * M_PI / 180)));
-	d1.distanceRightLeft = (radius * std::sin(angle * M_PI / 180)) * 0.3;
-	
+	d1.distanceRightLeft = (radius * std::sin(angle * M_PI / 180)) * -0.25;
 }
 
 
 void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
-	//std::cout<< "forward---:::"<<detector.forward<< "forward"<<detector.forward- FORWARD<< std::endl;
+
 	if (!detector.init) {
 		if (std::abs(detector.forward - FORWARD) > LIM_FORWARD)
 			drone.distanceForward = detector.forward - FORWARD + 0.5*LIM_FORWARD;
 		else
 			drone.distanceForward = 0;
 
-		if (std::abs(std::abs(detector.rightLeft - detector.leftOverAngle.first) /*9- RIGHT_LEFT*/) > LIM_RIGHT_LEFT) {
-			if(detector.rightLeft /*- (RIGHT_LEFT * detector.rightInForm) */> 0)
-				drone.distanceRightLeft = -detector.rightLeft + LIM_RIGHT_LEFT * 0.5- detector.leftOverAngle.first;
-			else
-				drone.distanceRightLeft = -detector.rightLeft + LIM_RIGHT_LEFT * 0.5 - detector.leftOverAngle.first;
-			//drone.distanceRightLeft = std::abs(detector.rightLeft) - RIGHT_LEFT;
+
+		if(detector.rightInForm > 0){
+			if(std::abs(detector.rightLeft - detector.leftOverAngle.first - RIGHT) > LIM_RIGHT_LEFT) {
+				drone.distanceRightLeft = -(detector.rightLeft - detector.leftOverAngle.first) + detector.rightInForm *( RIGHT + LIM_RIGHT_LEFT * 0.5 );
+			} else{ 
+				drone.distanceRightLeft = 0;
+			}
 		}
-		else
-			drone.distanceRightLeft = 0;
+		else{
+			if(std::abs(detector.rightLeft - detector.leftOverAngle.first - LEFT) > LIM_RIGHT_LEFT) {
+				drone.distanceRightLeft = -(detector.rightLeft - detector.leftOverAngle.first) + detector.rightInForm *( LEFT + LIM_RIGHT_LEFT * 0.5 );
+			} else{ 
+				drone.distanceRightLeft = 0;
+			}
+			
 		
-		/*if(detector.rollAngle > 0){
-			std::cout<<"upDown: "<<detector.upDown<<"angle: "<< detector.rollAngle<<std::endl;
-			detector.upDown = detector.upDown +(180-detector.rollAngle)*0.005;
-		} else {
-			detector.upDown = detector.upDown -(180 + detector.rollAngle)*0.005;
-		}*/
 		
-		if(std::abs(detector.upDown) > LIM_HEIGHT){
-			if(detector.upDown > 0)
-				drone.distanceHeight = -(detector.upDown - LIM_HEIGHT * 0.5);
+		}		
+		
+		
+		
+		/*
+		else {/*
+			if (std::abs(std::abs(detector.rightLeft - detector.leftOverAngle.first) - RIGHT_LEFT) > LIM_RIGHT_LEFT) {
+				if(detector.rightLeft - (RIGHT_LEFT * detector.rightInForm) > 0)
+					drone.distanceRightLeft = -detector.rightLeft + LIM_RIGHT_LEFT * 0.5 - detector.leftOverAngle.first;
+				else
+					drone.distanceRightLeft = -detector.rightLeft - LIM_RIGHT_LEFT * 0.5 - detector.leftOverAngle.first;
+				//drone.distanceRightLeft = std::abs(detector.rightLeft) - RIGHT_LEFT;
+			}
 			else
-				drone.distanceHeight = -(detector.upDown + LIM_HEIGHT * 0.5);
+				drone.distanceRightLeft = 0;
+		
+		
+			if(std::abs(detector.rightLeft - detector.leftOverAngle.first - RIGHT_LEFT) > LIM_RIGHT_LEFT){
+				drone.distanceRightLeft = -(detector.rightLeft - detector.leftOverAngle.first) + RIGHT_LEFT - LIM_RIGHT_LEFT * 0.5;
+			} else{ 
+				drone.distanceRightLeft = 0;
+			}
+		}	*/
+		
+		
+		/*std::cout <<"Before " <<"upDown: "<<detector.upDown<<"angle: "<< detector.rollAngle << "Height: " << drone.distanceHeight <<std::endl;*/
+		
+		if(detector.rollAngle > 0){
+			
+			drone.distanceHeight = detector.upDown + (180 - detector.rollAngle);
+		} else {
+			drone.distanceHeight = detector.upDown - (180 + detector.rollAngle);
+		}
+
+		if(std::abs(drone.distanceHeight) > LIM_HEIGHT){
+			if(detector.upDown > 0)
+				drone.distanceHeight = -1 * (drone.distanceHeight - LIM_HEIGHT * 0.5);
+			else
+				drone.distanceHeight = -1 * (drone.distanceHeight + LIM_HEIGHT * 0.5);
 		} else 
 			drone.distanceHeight = 0;
 		
-
+		//std::cout<<"in distances: " <<"upDown: "<<detector.upDown<<"angle: "<< detector.rollAngle << "Height: " << drone.distanceHeight  <<std::endl;
+		
+		//sleep(1);
+		
 		if (detector.leftOverAngle.first > LIM_ANGLE){
 			drone.angle = (detector.leftOverAngle.first - (LIM_ANGLE*0.5)) ; // Maybe we shall add angle limit.
 			drone.angle = detector.leftOverAngle.second ? drone.angle : -1 * drone.angle;
-			circularAngle(drone, detector.leftOverAngle.second ? detector.leftOverAngle.first : (-detector.leftOverAngle.first), detector);
+			if(detector.leftOverAngle.first > LIM_ANGLE_CIRCLE)
+				circularAngle(drone, detector.leftOverAngle.second ? detector.leftOverAngle.first : (-detector.leftOverAngle.first), detector);
 		}else
 			drone.angle = 0;
 
@@ -257,7 +282,26 @@ int main(){
     float currentMarkerSize = data["currentMarkerSize"];
     
     tello.SendCommandWithResponse("takeoff");  
+    /*
+    tello.SendCommand("rc 0 0 30 0");
+    sleep(5);
+tello.SendCommand("rc 20 0 0 0");
+sleep(5);
+tello.SendCommand("rc -20 0 0 0");
+sleep(5);
+tello.SendCommand("rc 0 20 0 0");
+sleep(5);
+tello.SendCommand("rc 0 -20 0 0");
+sleep(5);
+tello.SendCommand("rc 0 0 10 0");
+sleep(5);
+tello.SendCommand("rc 0 0 -10 0");
+sleep(5);
+tello.SendCommand("rc 0 0 0 100");
+sleep(5);
+tello.SendCommand("rc 0 0 0 -100");*/
 
+				
     
     if (isCameraString){
         std::string cameraString = data["cameraString"];
