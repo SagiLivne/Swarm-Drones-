@@ -43,6 +43,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
        		}  
 		if(detector.ID==-1 && tmpId!=-1){
 		int i=0;
+		drone.distanceHeight = drone.distanceHeight /10; 
 		    while(i<10){// timer for leader search when lost. after 5 seconds of not finding the leader stop searching and stop in place.
 		        //lostLeader(detector, tello);
 		        sleep(0.25); 
@@ -114,7 +115,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 }
 
 
-void circularAngle(drone &d1, double angle,aruco  &detector){
+void circularAngle(drone &d1, double angle, aruco  &detector){
 	double radius = std::sqrt(std::pow(detector.forward,2) + std::pow(detector.rightLeft,2)) ;
 	d1.distanceForward = (radius - (radius * std::cos(angle * M_PI / 180)));
 	d1.distanceRightLeft = (radius * std::sin(angle * M_PI / 180)) * -0.25;
@@ -143,35 +144,7 @@ void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 			} else{ 
 				drone.distanceRightLeft = 0;
 			}
-			
-		
-		
 		}		
-		
-		
-		
-		/*
-		else {/*
-			if (std::abs(std::abs(detector.rightLeft - detector.leftOverAngle.first) - RIGHT_LEFT) > LIM_RIGHT_LEFT) {
-				if(detector.rightLeft - (RIGHT_LEFT * detector.rightInForm) > 0)
-					drone.distanceRightLeft = -detector.rightLeft + LIM_RIGHT_LEFT * 0.5 - detector.leftOverAngle.first;
-				else
-					drone.distanceRightLeft = -detector.rightLeft - LIM_RIGHT_LEFT * 0.5 - detector.leftOverAngle.first;
-				//drone.distanceRightLeft = std::abs(detector.rightLeft) - RIGHT_LEFT;
-			}
-			else
-				drone.distanceRightLeft = 0;
-		
-		
-			if(std::abs(detector.rightLeft - detector.leftOverAngle.first - RIGHT_LEFT) > LIM_RIGHT_LEFT){
-				drone.distanceRightLeft = -(detector.rightLeft - detector.leftOverAngle.first) + RIGHT_LEFT - LIM_RIGHT_LEFT * 0.5;
-			} else{ 
-				drone.distanceRightLeft = 0;
-			}
-		}	*/
-		
-		
-		/*std::cout <<"Before " <<"upDown: "<<detector.upDown<<"angle: "<< detector.rollAngle << "Height: " << drone.distanceHeight <<std::endl;*/
 		
 		if(detector.rollAngle > 0){
 			
@@ -180,6 +153,7 @@ void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 			drone.distanceHeight = detector.upDown - (180 + detector.rollAngle);
 		}
 
+		
 		if(std::abs(drone.distanceHeight) > LIM_HEIGHT){
 			if(detector.upDown > 0)
 				drone.distanceHeight = -1 * (drone.distanceHeight - LIM_HEIGHT * 0.5);
@@ -188,12 +162,8 @@ void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 		} else 
 			drone.distanceHeight = 0;
 		
-		//std::cout<<"in distances: " <<"upDown: "<<detector.upDown<<"angle: "<< detector.rollAngle << "Height: " << drone.distanceHeight  <<std::endl;
-		
-		//sleep(1);
-		
 		if (detector.leftOverAngle.first > LIM_ANGLE){
-			drone.angle = (detector.leftOverAngle.first - (LIM_ANGLE*0.5)) ; // Maybe we shall add angle limit.
+			drone.angle = (detector.leftOverAngle.first - (LIM_ANGLE*0.5));
 			drone.angle = detector.leftOverAngle.second ? drone.angle : -1 * drone.angle;
 			if(detector.leftOverAngle.first > LIM_ANGLE_CIRCLE)
 				circularAngle(drone, detector.leftOverAngle.second ? detector.leftOverAngle.first : (-detector.leftOverAngle.first), detector);
@@ -201,17 +171,7 @@ void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 			drone.angle = 0;
 
 
-
-		//drone.angle = detector.leftOverAngle.first; // Maybe we shall add angle limit.
-		//drone.angle = detector.leftOverAngle.second ? -drone.angle : drone.angle;
 		isLost = false;
-		//circularAngle(drone, drone.angle, detector);
-
-		//std::cout<<" drone: "<< std::endl;
-		//std::cout<<"forward: "<< drone.distanceForward << " rightLeft :"<< drone.distanceRightLeft<< " height: "<<drone.distanceHeight<< " angle: "<< drone.angle  << std::endl;
-
-
-		//updateMovement(drone, detector, tello);
 	}
 
 }
@@ -221,9 +181,8 @@ void lostLeader(aruco &detector, ctello::Tello& tello) {
     int i=0;
     if (!isLost) {
         isLost = true;
-	drone lastFrame = buffer.front();  // 
-        distances(lastFrame, detector, tello);  // 
-        
+	drone lastFrame = buffer.front();  
+        distances(lastFrame, detector, tello);          
   
   }
 }
@@ -231,14 +190,12 @@ void lostLeader(aruco &detector, ctello::Tello& tello) {
 
 void runAruco(aruco &detector, drone &d1, ctello::Tello& tello){
     while(true){ //Multiplied by 100 in order to display it in cm.
-    
+   
         if(detector.ID!=-1){        
         	distances(d1,detector, tello);
         }
     }
 }
-
-
 
 
 
@@ -251,7 +208,6 @@ void addToBuffer(drone& dr) {
     }
     buffer.push_front(dr);
 }
-
 
 
 
@@ -318,6 +274,5 @@ tello.SendCommand("rc 0 0 0 -100");*/
     }
     
     //tello.SendCommandWithResponse("land");
-//    movementThread.join();
     return 0; 
 }
