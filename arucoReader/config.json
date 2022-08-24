@@ -1,0 +1,8 @@
+{
+  "yamlCalibrationPath" : "/home/rbdpi4/arucoReader/cameraConfigs/swarm5.yaml",
+  "isCameraString": true,
+  "cameraPort": 0,
+  "cameraString": "udp://0.0.0.0:11111?overrun_nonfatal=1&fifo_size=5000",
+  "currentMarkerSize" : 0.03,
+  "DroneName": "swarm5"
+}

@@ -1,0 +1,5 @@
+/home/rbdpi4/arucoReader/build/CMakeFiles/aruco.dir
+/home/rbdpi4/arucoReader/build/CMakeFiles/drone.dir
+/home/rbdpi4/arucoReader/build/CMakeFiles/runAruco.dir
+/home/rbdpi4/arucoReader/build/CMakeFiles/edit_cache.dir
+/home/rbdpi4/arucoReader/build/CMakeFiles/rebuild_cache.dir

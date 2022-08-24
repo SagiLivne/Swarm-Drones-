@@ -1,0 +1,2 @@
+/usr/bin/ar qc libaruco.a CMakeFiles/aruco.dir/src/aruco.cpp.o
+/usr/bin/ranlib libaruco.a

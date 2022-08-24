@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdrone.a CMakeFiles/drone.dir/src/drone.cpp.o
+/usr/bin/ranlib libdrone.a

@@ -1,0 +1,4 @@
+/home/rbdpi4/cameraCalibration/build/CMakeFiles/cameraCalibration.dir
+/home/rbdpi4/cameraCalibration/build/CMakeFiles/telloCalibration.dir
+/home/rbdpi4/cameraCalibration/build/CMakeFiles/edit_cache.dir
+/home/rbdpi4/cameraCalibration/build/CMakeFiles/rebuild_cache.dir
