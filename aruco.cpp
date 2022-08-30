@@ -182,7 +182,7 @@ void aruco::trackMarkerThread() {
                 upDown = t.at<double>(1) * 100;
                 forward = t.at<double>(2) * 100;
                 ID = ids[rightId];
-                leftOverAngle = getLeftOverAngleFromRotationVector(localRvecs[rightId]);
+                yaw = getLeftOverAngleFromRotationVector(localRvecs[rightId]);
                 rollAngle = getHorizontalAngleFromRotationVector(localRvecs[rightId]);
                 usleep(amountOfUSleepForTrackMarker);
                
@@ -215,13 +215,13 @@ void aruco::getEulerAngles(cv::Mat &rotCameraMatrix, cv::Vec3d &eulerAngles) {
                               eulerAngles);
 }
 
-std::pair<int, bool> aruco::getLeftOverAngleFromRotationVector(const cv::Vec<double, 3> &rvec) {
+int aruco::getLeftOverAngleFromRotationVector(const cv::Vec<double, 3> &rvec) {
     cv::Mat R33 = cv::Mat::eye(3, 3, CV_64FC1);
     cv::Rodrigues(rvec, R33);
     cv::Vec3d eulerAngles;
     getEulerAngles(R33, eulerAngles);
-    int yaw = std::abs(int(eulerAngles[1]));
-    return {yaw, eulerAngles[1] > 0};
+    int yaw = int(eulerAngles[1]);
+    return yaw;
 }
 
 int aruco::getHorizontalAngleFromRotationVector(const cv::Vec<double, 3> &rvec) {

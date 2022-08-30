@@ -1,5 +1,6 @@
 
 #include <unistd.h>
+#include <atomic>
 //#include "../include/aruco.h"
 
 class drone {
@@ -11,7 +12,7 @@ public:
 	double distanceRightLeft;
 	double distanceHeight;
 	double angle;
-	bool commandFlag=1;
+	std::atomic<bool> commandFlag=false;
 
 	drone(int leaderID, bool orientation, double distanceForward, double distanceRightLeft, double distanceHeight);
 
