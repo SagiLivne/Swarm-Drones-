@@ -119,7 +119,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 			else 
 				tello.SendCommand("rc 0 0 0 0");
 			
-			usleep(50);
+			usleep(5000);
 			std::cout /*<< command */<< "drone:" /*<<" height: "<< drone.distanceHeight << "forward: "<< drone.distanceForward*/ << " rightLeft :" << drone.distanceRightLeft << " angle: "<< drone.angle /*<< "Right or Left " << detector.rightInForm *//*<< " forward: " << detector.forward*/ <<" right-left: " << detector.rightLeft /*<< " updown: " << detector.upDown*/	
                   << " angle: " <<  detector.yaw/* <<"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm *//*<< "Angle: " << (detector.leftOverAngle.second ? detector.leftOverAngle.first : (-detector.leftOverAngle.first))/*<< " init: " << detector.init /*<< " Roll? :" << detector.rollAngle <<" updown: " << detector.upDown */<< std::endl;
                  
