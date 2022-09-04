@@ -12,7 +12,7 @@
 
 #define FORWARD 120
 #define LEFT 30
-#define RIGHT 15
+#define RIGHT 23
 #define BUFFER_SIZE 10	
 #define RADIUS 0
 #define LIM_FORWARD 20
@@ -37,7 +37,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 	int tmpId=-1;
 	
 	while(true) {
-		//while(!drone.commandFlag);
+		while(!drone.commandFlag);
 			//std::cout << "got into the busy wait" << std::endl;
 		
 
@@ -71,7 +71,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 		if (drone.distanceRightLeft){
 			if(std::abs(drone.distanceRightLeft*0.4) > 40)
 				drone.distanceRightLeft = drone.distanceRightLeft > 0 ? 40 : -40;
-			command += std::to_string(drone.distanceRightLeft*0.4);	
+			command += std::to_string((int)std::trunc(drone.distanceRightLeft*0.4));	
 			command+=" ";
 		}
 		else
@@ -82,7 +82,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 			if(std::abs(drone.distanceForward*0.4) > 40)
 				drone.distanceForward = drone.distanceForward > 0 ? 40 : -40;
 				
-			command +=std::to_string(drone.distanceForward*0.4);
+			command +=std::to_string((int)std::trunc(drone.distanceForward*0.4));
 			command+=" ";
 		}
 		else
@@ -94,7 +94,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 			if(std::abs(drone.distanceHeight) > 40)
 				drone.distanceHeight = drone.distanceHeight > 0 ? 40 : -40;
 		
-			command += std::to_string(drone.distanceHeight);
+			command += std::to_string((int)std::trunc(drone.distanceHeight));
 			command+=" ";
 		}
 		else
@@ -105,7 +105,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 			if(std::abs(drone.angle) > 25)
 				drone.angle = drone.angle > 0 ? 25 : -25;
 		
-			command += std::to_string(drone.angle);
+			command += std::to_string((int)std::trunc(drone.angle));
 			command+=" ";
 		}
 		else
@@ -114,14 +114,25 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
                   
 		try {
 				
-			if(!detector.init || detector.ID!=-1)
+			if(!detector.init || detector.ID!=-1){
+				//std::cout << command << std::endl;
 				tello.SendCommand(command);	
+			}
 			else 
 				tello.SendCommand("rc 0 0 0 0");
 			
-			usleep(5000);
-			std::cout /*<< command */<< "drone:" /*<<" height: "<< drone.distanceHeight << "forward: "<< drone.distanceForward*/ << " rightLeft :" << drone.distanceRightLeft << " angle: "<< drone.angle /*<< "Right or Left " << detector.rightInForm *//*<< " forward: " << detector.forward*/ <<" right-left: " << detector.rightLeft /*<< " updown: " << detector.upDown*/	
-                  << " angle: " <<  detector.yaw/* <<"  ID: "<< detector.ID <<"  right or left: "<< detector.rightInForm *//*<< "Angle: " << (detector.leftOverAngle.second ? detector.leftOverAngle.first : (-detector.leftOverAngle.first))/*<< " init: " << detector.init /*<< " Roll? :" << detector.rollAngle <<" updown: " << detector.upDown */<< std::endl;
+			usleep(250000);
+			
+			
+		std::cout << command << std::endl;
+		
+		std::cout << "drone:" <<" height: "<< drone.distanceHeight << " forward: "<< drone.distanceForward << " rightLeft: " << drone.distanceRightLeft << " angle: "<< drone.angle << std::endl;
+			
+		std::cout << "detector:" << " position" << (detector.rightInForm > 0 ? " RIGHT" : " LEFT") << " forward: " << detector.forward << " right-left: " << detector.rightLeft << " updown: " << detector.upDown	
+                  << " angle: " <<  detector.yaw << " roll: "<< detector.rollAngle << " init: " << detector.init << std::endl;
+                 
+                 
+                std::cout << std::endl;
                  
 		}catch(...){
 		
@@ -138,6 +149,9 @@ void circularAngle(drone &d1, double angle, aruco  &detector){
 	d1.distanceForward += (radius - (radius * std::cos(angle * M_PI / 180)));
 	d1.distanceRightLeft += (radius * std::sin(angle * M_PI / 180)) * -0.25;
 }
+
+
+void average 
 
 
 void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
@@ -159,7 +173,7 @@ void distances(drone& drone, aruco& detector, ctello::Tello& tello) {
 			}
 		}
 		else{
-			if(std::abs(detector.rightLeft - detector.yaw - LEFT) > LIM_RIGHT_LEFT) {
+			if(std::abs(detector.rightLeft - detector.yaw - RIGHT) > LIM_RIGHT_LEFT) {
 				drone.distanceRightLeft = -(detector.rightLeft - detector.yaw) + detector.rightInForm *( LEFT + LIM_RIGHT_LEFT * 0.5 );
 			} else{ 
 				drone.distanceRightLeft = 0;
