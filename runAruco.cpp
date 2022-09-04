@@ -11,9 +11,9 @@
 #include <ctello.h>
 
 #define FORWARD 160
-#define RIGHT_LEFT 20
+#define RIGHT_LEFT 30
 #define LIM_FORWARD 20
-#define LIM_RIGHT_LEFT 20
+#define LIM_RIGHT_LEFT 15
 #define LIM_HEIGHT 15
 #define LIM_ANGLE 20
 //#define LIM_ANGLE_CIRCLE 25
@@ -55,8 +55,8 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 		
 		if (drone.distanceRightLeft){
 			if(std::abs(drone.distanceRightLeft*0.4) > LIM_MOVEMENT)
-				drone.distanceRightLeft = drone.distanceRightLeft > 0 ? LIM_MOVEMENT : -1 * LIM_MOVEMENT;
-			command += std::to_string((int)std::trunc(drone.distanceRightLeft*0.4));	
+				drone.distanceRightLeft = (drone.distanceRightLeft > 0 ? LIM_MOVEMENT : -1 * LIM_MOVEMENT) * 2.5;
+			command += std::to_string((int) (drone.distanceRightLeft*0.4));	
 			command+=" ";
 		}
 		else
@@ -65,7 +65,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 		if (drone.distanceForward){
 		
 			if(std::abs(drone.distanceForward*0.4) > LIM_MOVEMENT)
-				drone.distanceForward = drone.distanceForward > 0 ? LIM_MOVEMENT : -1 * LIM_MOVEMENT;
+				drone.distanceForward = (drone.distanceForward > 0 ? LIM_MOVEMENT : -1 * LIM_MOVEMENT) * 2.5;
 				
 			command +=std::to_string((int)std::trunc(drone.distanceForward*0.4));
 			command+=" ";
@@ -105,7 +105,7 @@ void updateMovement(drone& drone, aruco& detector, ctello::Tello& tello) {
 			else 
 				tello.SendCommand("rc 0 0 0 0");
 			
-			usleep(500000);
+			usleep(1000000);
 			
 			
 		std::cout << command << std::endl;
